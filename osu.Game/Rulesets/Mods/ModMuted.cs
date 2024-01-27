@@ -49,6 +49,13 @@ namespace osu.Game.Rulesets.Mods
             MaxValue = 500,
         };
 
+        [SettingSource("Early activation", "Play metronome sounds earlier.", SettingControlType = typeof(SettingsSlider<double, MuteEarlySlider>))]
+        public BindableDouble MuteEarlyActivation { get; } = new BindableDouble(0)
+        {
+            MinValue = 0,
+            MaxValue = 1000,
+        };
+
         [SettingSource("Mute hit sounds", "Hit sounds are also muted alongside the track.")]
         public BindableBool AffectsHitSounds { get; } = new BindableBool(true);
 
@@ -69,7 +76,7 @@ namespace osu.Game.Rulesets.Mods
                 MetronomeBeat metronomeBeat;
 
                 // Importantly, this is added to FrameStableComponents and not Overlays as the latter would cause it to be self-muted by the mod's volume adjustment.
-                drawableRuleset.FrameStableComponents.Add(metronomeBeat = new MetronomeBeat(drawableRuleset.Beatmap.HitObjects.First().StartTime));
+                drawableRuleset.FrameStableComponents.Add(metronomeBeat = new MetronomeBeat(drawableRuleset.Beatmap.HitObjects.First().StartTime, MuteEarlyActivation.Value));
 
                 metronomeBeat.AddAdjustment(AdjustableProperty.Volume, metronomeVolumeAdjust);
             }
@@ -99,5 +106,15 @@ namespace osu.Game.Rulesets.Mods
     public partial class MuteComboSlider : RoundedSliderBar<int>
     {
         public override LocalisableString TooltipText => Current.Value == 0 ? "always muted" : base.TooltipText;
+    }
+
+    public partial class MuteEarlySlider : RoundedSliderBar<double>
+    {
+        public override LocalisableString TooltipText => base.TooltipText + " ms";
+
+        public MuteEarlySlider()
+        {
+            KeyboardStep = 1;
+        }
     }
 }
