@@ -18,9 +18,11 @@ namespace osu.Game.Rulesets.Mods
         private readonly PausableSkinnableSound sample;
 
         /// <param name="firstHitTime">Start time of the first hit object, used for providing a count down.</param>
-        public MetronomeBeat(double firstHitTime)
+        /// <param name="earlyActivation">Optional early activation time.</param>
+        public MetronomeBeat(double firstHitTime, double earlyActivation = 0)
         {
             this.firstHitTime = firstHitTime;
+            EarlyActivationMilliseconds = earlyActivation;
             AllowMistimedEventFiring = false;
             Divisor = 1;
 
