@@ -35,7 +35,7 @@ namespace osu.Game.Overlays.Volume
         private CircularProgress volumeCircle;
         private CircularProgress volumeCircleGlow;
 
-        public BindableDouble Bindable { get; } = new BindableDouble { MinValue = 0, MaxValue = 1, Precision = 0.01 };
+        public BindableDouble Bindable { get; } = new BindableDouble { MinValue = Decibel.MIN, MaxValue = 0, Precision = adjust_step };
         private readonly float circleSize;
         private readonly Color4 meterColour;
         private readonly string name;
@@ -238,8 +238,9 @@ namespace osu.Game.Overlays.Volume
             bgProgress.Current.Value = 0.75f;
         }
 
-        private int? displayVolumeInt;
+        private int currentStep;
 
+        private double percentage;
         private double displayVolume;
 
         protected double DisplayVolume
@@ -247,14 +248,15 @@ namespace osu.Game.Overlays.Volume
             get => displayVolume;
             set
             {
-                displayVolume = value;
+                percentage = 1 - value / Decibel.MIN;
 
-                int intValue = (int)Math.Round(displayVolume * 100);
-                bool intVolumeChanged = intValue != displayVolumeInt;
+                int step = (int)Math.Round(value / adjust_step);
+                bool stepChanged = step != currentStep;
 
-                displayVolumeInt = intValue;
+                currentStep = step;
+                displayVolume = currentStep * adjust_step;
 
-                if (displayVolume >= 0.995f)
+                if (currentStep >= step_max)
                 {
                     text.Text = "MAX";
                     maxGlow.EffectColour = meterColour.Opacity(2f);
@@ -262,13 +264,13 @@ namespace osu.Game.Overlays.Volume
                 else
                 {
                     maxGlow.EffectColour = Color4.Transparent;
-                    text.Text = intValue.ToString(CultureInfo.CurrentCulture);
+                    text.Text = currentStep <= step_min ? "-∞" : displayVolume.ToString("N1", CultureInfo.CurrentCulture);
                 }
 
-                volumeCircle.Current.Value = displayVolume * 0.75f;
-                volumeCircleGlow.Current.Value = displayVolume * 0.75f;
+                volumeCircle.Current.Value = percentage * 0.75f;
+                volumeCircleGlow.Current.Value = percentage * 0.75f;
 
-                if (intVolumeChanged && IsLoaded)
+                if (stepChanged && IsLoaded)
                     Scheduler.AddOnce(playTickSound);
             }
         }
@@ -282,10 +284,10 @@ namespace osu.Game.Overlays.Volume
 
             var channel = notchSample.GetChannel();
 
-            channel.Frequency.Value = 0.99f + RNG.NextDouble(0.02f) + displayVolume * 0.1f;
+            channel.Frequency.Value = 0.99f + RNG.NextDouble(0.02f) + percentage * 0.1f;
 
             // intentionally pitched down, even when hitting max.
-            if (displayVolumeInt == 0 || displayVolumeInt == 100)
+            if (currentStep == step_min || currentStep == step_max)
                 channel.Frequency.Value -= 0.5f;
 
             channel.Play();
@@ -298,7 +300,10 @@ namespace osu.Game.Overlays.Volume
             private set => Bindable.Value = value;
         }
 
-        private const double adjust_step = 0.01;
+        private const double adjust_step = Decibel.STEP;
+
+        private const int step_min = (int)(Decibel.MIN / Decibel.STEP);
+        private const int step_max = 0;
 
         public void Increase(double amount = 1, bool isPrecise = false) => adjust(amount, isPrecise);
         public void Decrease(double amount = 1, bool isPrecise = false) => adjust(-amount, isPrecise);

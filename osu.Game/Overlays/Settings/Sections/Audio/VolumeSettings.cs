@@ -29,41 +29,48 @@ namespace osu.Game.Overlays.Settings.Sections.Audio
                 {
                     LabelText = AudioSettingsStrings.MasterVolume,
                     Current = audio.Volume.Scale,
-                    KeyboardStep = 0.01f,
-                    DisplayAsPercentage = true
+                    KeyboardStep = (float)Decibel.STEP,
                 },
-                new SettingsSlider<double>
+                new VolumeAdjustSlider
                 {
                     LabelText = AudioSettingsStrings.MasterVolumeInactive,
                     Current = volumeInactive.Scale,
-                    KeyboardStep = 0.01f,
-                    DisplayAsPercentage = true
+                    KeyboardStep = (float)Decibel.STEP,
+                    PlaySamplesOnAdjust = true,
                 },
                 new VolumeAdjustSlider
                 {
                     LabelText = AudioSettingsStrings.EffectVolume,
                     Current = audio.VolumeSample.Scale,
-                    KeyboardStep = 0.01f,
-                    DisplayAsPercentage = true
+                    KeyboardStep = (float)Decibel.STEP,
                 },
 
                 new VolumeAdjustSlider
                 {
                     LabelText = AudioSettingsStrings.MusicVolume,
                     Current = audio.VolumeTrack.Scale,
-                    KeyboardStep = 0.01f,
-                    DisplayAsPercentage = true
+                    KeyboardStep = (float)Decibel.STEP,
                 },
             };
         }
 
+        private partial class DecibelSliderBar : RoundedSliderBar<double>
+        {
+            public override LocalisableString TooltipText => (Current.Value <= Decibel.MIN ? "-∞" : Current.Value.ToString("+#0.0;-#0.0;+0.0")) + " dB";
+        }
+
         private partial class VolumeAdjustSlider : SettingsSlider<double>
         {
-            protected override Drawable CreateControl()
+            protected override Drawable CreateControl() => new DecibelSliderBar
             {
-                var sliderBar = (RoundedSliderBar<double>)base.CreateControl();
-                sliderBar.PlaySamplesOnAdjust = false;
-                return sliderBar;
+                RelativeSizeAxes = Axes.X,
+                PlaySamplesOnAdjust = false,
+            };
+
+            public bool PlaySamplesOnAdjust
+            {
+                get => ((DecibelSliderBar)Control).PlaySamplesOnAdjust;
+                set => ((DecibelSliderBar)Control).PlaySamplesOnAdjust = value;
             }
         }
     }
