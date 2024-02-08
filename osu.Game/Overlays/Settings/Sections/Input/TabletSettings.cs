@@ -37,11 +37,11 @@ namespace osu.Game.Overlays.Settings.Sections.Input
         private readonly Bindable<Vector2> areaSize = new Bindable<Vector2>();
         private readonly IBindable<TabletInfo> tablet = new Bindable<TabletInfo>();
 
-        private readonly BindableNumber<float> offsetX = new BindableNumber<float> { MinValue = 0 };
-        private readonly BindableNumber<float> offsetY = new BindableNumber<float> { MinValue = 0 };
+        private readonly BindableNumber<float> offsetX = new BindableNumber<float> { MinValue = 0, Precision = 0.01f };
+        private readonly BindableNumber<float> offsetY = new BindableNumber<float> { MinValue = 0, Precision = 0.01f };
 
-        private readonly BindableNumber<float> sizeX = new BindableNumber<float> { MinValue = 10 };
-        private readonly BindableNumber<float> sizeY = new BindableNumber<float> { MinValue = 10 };
+        private readonly BindableNumber<float> sizeX = new BindableNumber<float> { MinValue = 10, Precision = 0.01f };
+        private readonly BindableNumber<float> sizeY = new BindableNumber<float> { MinValue = 10, Precision = 0.01f };
 
         private readonly BindableNumber<float> rotation = new BindableNumber<float> { MinValue = 0, MaxValue = 360 };
 
@@ -57,7 +57,7 @@ namespace osu.Game.Overlays.Settings.Sections.Input
         {
             MinValue = 1 / largest_feasible_aspect_ratio,
             MaxValue = largest_feasible_aspect_ratio,
-            Precision = 0.01f,
+            Precision = 1e-4f,
         };
 
         private readonly BindableBool aspectLock = new BindableBool();
@@ -163,14 +163,16 @@ namespace osu.Game.Overlays.Settings.Sections.Input
                             TransferValueOnCommit = true,
                             LabelText = TabletSettingsStrings.XOffset,
                             Current = offsetX,
-                            CanBeShown = { BindTarget = enabled }
+                            CanBeShown = { BindTarget = enabled },
+                            KeyboardStep = 0.01f
                         },
                         new SettingsSlider<float>
                         {
                             TransferValueOnCommit = true,
                             LabelText = TabletSettingsStrings.YOffset,
                             Current = offsetY,
-                            CanBeShown = { BindTarget = enabled }
+                            CanBeShown = { BindTarget = enabled },
+                            KeyboardStep = 0.01f
                         },
                         new SettingsSlider<float>
                         {
@@ -204,14 +206,16 @@ namespace osu.Game.Overlays.Settings.Sections.Input
                             TransferValueOnCommit = true,
                             LabelText = CommonStrings.Width,
                             Current = sizeX,
-                            CanBeShown = { BindTarget = enabled }
+                            CanBeShown = { BindTarget = enabled },
+                            KeyboardStep = 0.01f
                         },
                         new SettingsSlider<float>
                         {
                             TransferValueOnCommit = true,
                             LabelText = CommonStrings.Height,
                             Current = sizeY,
-                            CanBeShown = { BindTarget = enabled }
+                            CanBeShown = { BindTarget = enabled },
+                            KeyboardStep = 0.01f
                         },
                     }
                 },
