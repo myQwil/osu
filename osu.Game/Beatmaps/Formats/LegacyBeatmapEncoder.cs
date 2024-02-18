@@ -30,6 +30,13 @@ namespace osu.Game.Beatmaps.Formats
         private readonly int onlineRulesetID;
 
         /// <summary>
+        /// Whether or not the latency assumption should be restored. Defaults on; only disable for testing purposes.
+        /// </summary>
+        public bool RestoreLatencyAssumption = true;
+
+        private const int offset = (int)Beatmap.LATENCY_OFFSET;
+
+        /// <summary>
         /// Creates a new <see cref="LegacyBeatmapEncoder"/>.
         /// </summary>
         /// <param name="beatmap">The beatmap to encode.</param>
@@ -80,7 +87,7 @@ namespace osu.Game.Beatmaps.Formats
 
             if (!string.IsNullOrEmpty(beatmap.Metadata.AudioFile)) writer.WriteLine(FormattableString.Invariant($"AudioFilename: {Path.GetFileName(beatmap.Metadata.AudioFile)}"));
             writer.WriteLine(FormattableString.Invariant($"AudioLeadIn: {beatmap.BeatmapInfo.AudioLeadIn}"));
-            writer.WriteLine(FormattableString.Invariant($"PreviewTime: {beatmap.Metadata.PreviewTime}"));
+            writer.WriteLine(FormattableString.Invariant($"PreviewTime: {getOffsetTime(beatmap.Metadata.PreviewTime)}"));
             writer.WriteLine(FormattableString.Invariant($"Countdown: {(int)beatmap.BeatmapInfo.Countdown}"));
             writer.WriteLine(FormattableString.Invariant(
                 $"SampleSet: {toLegacySampleBank(((beatmap.ControlPointInfo as LegacyControlPointInfo)?.SamplePoints.FirstOrDefault() ?? SampleControlPoint.DEFAULT).SampleBank)}"));
@@ -155,7 +162,7 @@ namespace osu.Game.Beatmaps.Formats
                 writer.WriteLine(FormattableString.Invariant($"{(int)LegacyEventType.Background},0,\"{beatmap.BeatmapInfo.Metadata.BackgroundFile}\",0,0"));
 
             foreach (var b in beatmap.Breaks)
-                writer.WriteLine(FormattableString.Invariant($"{(int)LegacyEventType.Break},{b.StartTime},{b.EndTime}"));
+                writer.WriteLine(FormattableString.Invariant($"{(int)LegacyEventType.Break},{getOffsetTime(b.StartTime)},{getOffsetTime(b.EndTime)}"));
         }
 
         private void handleControlPoints(TextWriter writer)
@@ -193,7 +200,7 @@ namespace osu.Game.Beatmaps.Formats
                 // If the group contains a timing control point, it needs to be output separately.
                 if (groupTimingPoint != null)
                 {
-                    writer.Write(FormattableString.Invariant($"{groupTimingPoint.Time},"));
+                    writer.Write(FormattableString.Invariant($"{getOffsetTime(groupTimingPoint.Time)},"));
                     writer.Write(FormattableString.Invariant($"{groupTimingPoint.BeatLength},"));
                     outputControlPointAt(controlPointProperties, true);
                     lastControlPointProperties = controlPointProperties;
@@ -204,7 +211,7 @@ namespace osu.Game.Beatmaps.Formats
                     continue;
 
                 // Output any remaining effects as secondary non-timing control point.
-                writer.Write(FormattableString.Invariant($"{group.Time},"));
+                writer.Write(FormattableString.Invariant($"{getOffsetTime(group.Time)},"));
                 writer.Write(FormattableString.Invariant($"{-100 / controlPointProperties.SliderVelocity},"));
                 outputControlPointAt(controlPointProperties, false);
                 lastControlPointProperties = controlPointProperties;
@@ -359,7 +366,7 @@ namespace osu.Game.Beatmaps.Formats
 
             writer.Write(FormattableString.Invariant($"{position.X},"));
             writer.Write(FormattableString.Invariant($"{position.Y},"));
-            writer.Write(FormattableString.Invariant($"{hitObject.StartTime},"));
+            writer.Write(FormattableString.Invariant($"{getOffsetTime(hitObject.StartTime)},"));
             writer.Write(FormattableString.Invariant($"{(int)getObjectType(hitObject)},"));
             writer.Write(FormattableString.Invariant($"{(int)toLegacyHitSoundType(hitObject.Samples)},"));
 
@@ -510,7 +517,7 @@ namespace osu.Game.Beatmaps.Formats
             if (type == LegacyHitObjectType.Hold)
                 suffix = ':';
 
-            writer.Write(FormattableString.Invariant($"{endTimeData.EndTime}{suffix}"));
+            writer.Write(FormattableString.Invariant($"{getOffsetTime(endTimeData.EndTime)}{suffix}"));
         }
 
         private string getSampleBank(IList<HitSampleInfo> samples, bool banksOnly = false)
@@ -614,5 +621,9 @@ namespace osu.Game.Beatmaps.Formats
                 SampleVolume == other.SampleVolume &&
                 EffectFlags == other.EffectFlags;
         }
+
+        private int getOffsetTime(int time) => time - (RestoreLatencyAssumption ? offset : 0);
+
+        private double getOffsetTime(double time) => time - (RestoreLatencyAssumption ? offset : 0);
     }
 }

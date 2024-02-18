@@ -66,7 +66,7 @@ namespace osu.Game.Beatmaps.Formats
                 RulesetStore = new AssemblyRulesetStore();
             }
 
-            offset = FormatVersion < 5 ? EARLY_VERSION_TIMING_OFFSET : 0;
+            offset = (int)Beatmap.LATENCY_OFFSET + (FormatVersion < 5 ? EARLY_VERSION_TIMING_OFFSET : 0);
         }
 
         protected override Beatmap CreateTemplateObject()
