@@ -15,6 +15,19 @@ namespace osu.Game.Beatmaps
     public class Beatmap<T> : IBeatmap<T>
         where T : HitObject
     {
+        /// <summary>
+        /// An offset applied to beatmap time codes to align them with expectations.
+        /// </summary>
+        /// <remarks>
+        /// Historically, osu! beatmaps have an assumption of full system latency baked in.
+        /// This comes from a culmination of stable's platform offset, average hardware playback
+        /// latency, and users having their universal offsets tweaked to previous beatmaps.
+        ///
+        /// Coming to this value involved running various tests with existing users / beatmaps.
+        /// This included both visual and audible comparisons. Ballpark confidence is ≈2 ms.
+        /// </remarks>
+        public const float LATENCY_OFFSET = 20;
+
         private BeatmapDifficulty difficulty = new BeatmapDifficulty();
 
         public BeatmapDifficulty Difficulty
