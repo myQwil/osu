@@ -29,7 +29,7 @@ namespace osu.Game.Beatmaps
 
         private readonly OffsetCorrectionClock? fixedOffsetClock;
         private readonly OffsetCorrectionClock? userGlobalOffsetClock;
-        private readonly OffsetCorrectionClock? userBeatmapOffsetClock;
+        private readonly FramedOffsetClock? userBeatmapOffsetClock;
 
         private readonly IFrameBasedClock finalClockSource;
 
@@ -74,7 +74,7 @@ namespace osu.Game.Beatmaps
                 userGlobalOffsetClock = new OffsetCorrectionClock(fixedOffsetClock);
 
                 // User per-beatmap offset will be applied to this final clock.
-                finalClockSource = userBeatmapOffsetClock = new OffsetCorrectionClock(userGlobalOffsetClock);
+                finalClockSource = userBeatmapOffsetClock = new FramedOffsetClock(userGlobalOffsetClock);
             }
             else
             {
@@ -126,7 +126,7 @@ namespace osu.Game.Beatmaps
                 Debug.Assert(userGlobalOffsetClock != null);
                 Debug.Assert(userBeatmapOffsetClock != null);
 
-                return fixedOffsetClock.RateAdjustedOffset + userGlobalOffsetClock.RateAdjustedOffset + userBeatmapOffsetClock.RateAdjustedOffset;
+                return fixedOffsetClock.RateAdjustedOffset + userGlobalOffsetClock.RateAdjustedOffset + userBeatmapOffsetClock.Offset;
             }
         }
 
