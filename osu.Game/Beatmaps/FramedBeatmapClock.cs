@@ -18,7 +18,7 @@ namespace osu.Game.Beatmaps
     /// A clock intended to be the single source-of-truth for beatmap timing.
     ///
     /// It provides some functionality:
-    ///  - Optionally applies (and tracks changes of) beatmap, user, and platform offsets (see ctor argument applyOffsets).
+    ///  - Optionally applies (and tracks changes of) beatmap, user, and fixed offsets (see ctor argument applyOffsets).
     ///  - Adjusts <see cref="Seek"/> operations to account for any applied offsets, seeking in raw "beatmap" time values.
     ///  - Exposes track length.
     ///  - Allows changing the source to a new track (for cases like editor track updating).
@@ -27,8 +27,8 @@ namespace osu.Game.Beatmaps
     {
         private readonly bool applyOffsets;
 
+        private readonly OffsetCorrectionClock? fixedOffsetClock;
         private readonly OffsetCorrectionClock? userGlobalOffsetClock;
-        private readonly OffsetCorrectionClock? platformOffsetClock;
         private readonly OffsetCorrectionClock? userBeatmapOffsetClock;
 
         private readonly IFrameBasedClock finalClockSource;
@@ -64,10 +64,14 @@ namespace osu.Game.Beatmaps
             {
                 // Audio timings in general with newer BASS versions don't match stable.
                 // This only seems to be required on windows. We need to eventually figure out why, with a bit of luck.
-                platformOffsetClock = new OffsetCorrectionClock(interpolatedTrack) { Offset = RuntimeInfo.OS == RuntimeInfo.Platform.Windows ? 15 : 0 };
+                fixedOffsetClock = new OffsetCorrectionClock(interpolatedTrack) { Offset = RuntimeInfo.OS == RuntimeInfo.Platform.Windows ? 15 : 0 };
+
+                // Beatmap latency assumption acts as a negative virtual-time beatmap offset. We want to replace this
+                // with a positive real-time audio offset. This will improve synchronization at different playback rates.
+                fixedOffsetClock.Offset += Beatmap.LATENCY_OFFSET;
 
                 // User global offset (set in settings) should also be applied.
-                userGlobalOffsetClock = new OffsetCorrectionClock(platformOffsetClock);
+                userGlobalOffsetClock = new OffsetCorrectionClock(fixedOffsetClock);
 
                 // User per-beatmap offset will be applied to this final clock.
                 finalClockSource = userBeatmapOffsetClock = new OffsetCorrectionClock(userGlobalOffsetClock);
@@ -118,11 +122,11 @@ namespace osu.Game.Beatmaps
                 if (!applyOffsets)
                     return 0;
 
+                Debug.Assert(fixedOffsetClock != null);
                 Debug.Assert(userGlobalOffsetClock != null);
                 Debug.Assert(userBeatmapOffsetClock != null);
-                Debug.Assert(platformOffsetClock != null);
 
-                return userGlobalOffsetClock.RateAdjustedOffset + userBeatmapOffsetClock.RateAdjustedOffset + platformOffsetClock.RateAdjustedOffset;
+                return fixedOffsetClock.RateAdjustedOffset + userGlobalOffsetClock.RateAdjustedOffset + userBeatmapOffsetClock.RateAdjustedOffset;
             }
         }
 
