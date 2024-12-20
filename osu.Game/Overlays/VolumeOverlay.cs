@@ -76,9 +76,9 @@ namespace osu.Game.Overlays
                 },
             });
 
-            volumeMeterMaster.Bindable.BindTo(audio.Volume);
-            volumeMeterEffect.Bindable.BindTo(audio.VolumeSample);
-            volumeMeterMusic.Bindable.BindTo(audio.VolumeTrack);
+            volumeMeterMaster.Bindable.BindTo(audio.Volume.Scale);
+            volumeMeterEffect.Bindable.BindTo(audio.VolumeSample.Scale);
+            volumeMeterMusic.Bindable.BindTo(audio.VolumeTrack.Scale);
         }
 
         protected override void LoadComplete()
