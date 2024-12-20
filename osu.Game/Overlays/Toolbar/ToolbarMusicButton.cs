@@ -78,7 +78,7 @@ namespace osu.Game.Overlays.Toolbar
             base.LoadComplete();
 
             globalVolume = audio.Volume.Scale.GetBoundCopy();
-            globalVolume.BindValueChanged(v => volumeBar.ResizeHeightTo((float)v.NewValue, 200, Easing.OutQuint), true);
+            globalVolume.BindValueChanged(v => volumeBar.ResizeHeightTo((float)(1 - v.NewValue / Decibel.MIN), 200, Easing.OutQuint), true);
         }
 
         protected override bool OnKeyDown(KeyDownEvent e)
