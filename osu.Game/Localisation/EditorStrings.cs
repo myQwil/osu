@@ -100,6 +100,11 @@ namespace osu.Game.Localisation
         public static LocalisableString PlaybackSpeed => new TranslatableString(getKey(@"playback_speed"), @"Playback speed");
 
         /// <summary>
+        /// "Time-stretch"
+        /// </summary>
+        public static LocalisableString TimeStretch => new TranslatableString(getKey(@"time_stretch"), @"Time-stretch");
+
+        /// <summary>
         /// "Test!"
         /// </summary>
         public static LocalisableString TestBeatmap => new TranslatableString(getKey(@"test_beatmap"), @"Test!");
