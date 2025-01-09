@@ -11,14 +11,13 @@ using osu.Framework.Extensions.IEnumerableExtensions;
 using osu.Framework.Extensions.ObjectExtensions;
 using osu.Framework.Graphics;
 using osu.Framework.Graphics.Containers;
-using osu.Framework.Graphics.Cursor;
 using osu.Framework.Graphics.Sprites;
 using osu.Framework.Graphics.UserInterface;
 using osu.Framework.Input.Events;
-using osu.Framework.Localisation;
 using osu.Game.Graphics;
 using osu.Game.Graphics.Sprites;
 using osu.Game.Graphics.UserInterface;
+using osu.Game.Graphics.UserInterfaceV2;
 using osu.Game.Localisation;
 using osu.Game.Overlays;
 using osuTK.Input;
@@ -28,7 +27,7 @@ namespace osu.Game.Screens.Edit.Components
     public partial class PlaybackControl : BottomBarContainer
     {
         private IconButton playButton = null!;
-        private PlaybackSpeedControl playbackSpeedControl = null!;
+        private readonly Bindable<bool> adjustPitch = new Bindable<bool>(false);
 
         [Resolved]
         private EditorClock editorClock { get; set; } = null!;
@@ -52,7 +51,7 @@ namespace osu.Game.Screens.Edit.Components
                     Icon = FontAwesome.Regular.PlayCircle,
                     Action = togglePause,
                 },
-                playbackSpeedControl = new PlaybackSpeedControl
+                new FillFlowContainer
                 {
                     AutoSizeAxes = Axes.Y,
                     RelativeSizeAxes = Axes.X,
@@ -72,11 +71,45 @@ namespace osu.Game.Screens.Edit.Components
                             RelativeSizeAxes = Axes.X,
                             Height = 16,
                         },
+                        new FillFlowContainer
+                        {
+                            AutoSizeAxes = Axes.Y,
+                            Direction = FillDirection.Horizontal,
+                            Children = new Drawable[]
+                            {
+                                new OsuSpriteText
+                                {
+                                    Margin = new MarginPadding { Right = 5 },
+                                    Text = EditorStrings.AdjustPitch,
+                                },
+                                new SwitchButton
+                                {
+                                    Current = adjustPitch,
+                                },
+                            }
+                        },
                     }
                 }
             };
 
-            editorClock.AudioAdjustments.AddAdjustment(AdjustableProperty.Tempo, tempoAdjustment);
+            editorClock.AudioAdjustments.AddAdjustment(adjustPitch.Value ? AdjustableProperty.Frequency : AdjustableProperty.Tempo, tempoAdjustment);
+
+            adjustPitch.BindValueChanged(state =>
+            {
+                if (editorClock is var clock)
+                {
+                    if (state.NewValue)
+                    {
+                        clock.AudioAdjustments.RemoveAdjustment(AdjustableProperty.Tempo, tempoAdjustment);
+                        clock.AudioAdjustments.AddAdjustment(AdjustableProperty.Frequency, tempoAdjustment);
+                    }
+                    else
+                    {
+                        clock.AudioAdjustments.RemoveAdjustment(AdjustableProperty.Frequency, tempoAdjustment);
+                        clock.AudioAdjustments.AddAdjustment(AdjustableProperty.Tempo, tempoAdjustment);
+                    }
+                }
+            });
 
             if (editor != null)
                 currentScreenMode.BindTo(editor.Mode);
@@ -86,28 +119,13 @@ namespace osu.Game.Screens.Edit.Components
         {
             base.LoadComplete();
 
-            currentScreenMode.BindValueChanged(_ =>
-            {
-                if (currentScreenMode.Value == EditorScreenMode.Timing)
-                {
-                    tempoAdjustment.Value = 1;
-                    tempoAdjustment.Disabled = true;
-                    playbackSpeedControl.FadeTo(0.5f, 400, Easing.OutQuint);
-                    playbackSpeedControl.TooltipText = "Speed adjustment is unavailable in timing mode. Timing at slower speeds is inaccurate due to resampling artifacts.";
-                }
-                else
-                {
-                    tempoAdjustment.Disabled = false;
-                    playbackSpeedControl.FadeTo(1, 400, Easing.OutQuint);
-                    playbackSpeedControl.TooltipText = default;
-                }
-            });
+            currentScreenMode.BindValueChanged(_ => adjustPitch.Value = (currentScreenMode.Value == EditorScreenMode.Timing));
         }
 
         protected override void Dispose(bool isDisposing)
         {
-            if (editorClock.IsNotNull())
-                editorClock.AudioAdjustments.RemoveAdjustment(AdjustableProperty.Tempo, tempoAdjustment);
+            if (editorClock is var clock)
+                clock.AudioAdjustments.RemoveAdjustment(adjustPitch.Value ? AdjustableProperty.Frequency : AdjustableProperty.Tempo, tempoAdjustment);
 
             base.Dispose(isDisposing);
         }
@@ -143,11 +161,6 @@ namespace osu.Game.Screens.Edit.Components
             base.Update();
 
             playButton.Icon = editorClock.IsRunning ? pause_icon : play_icon;
-        }
-
-        private partial class PlaybackSpeedControl : FillFlowContainer, IHasTooltip
-        {
-            public LocalisableString TooltipText { get; set; }
         }
 
         public partial class PlaybackTabControl : OsuTabControl<double>
